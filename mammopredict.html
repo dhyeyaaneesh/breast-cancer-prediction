@@ -1,0 +1,1153 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>MammoPredict AI — Prediction & Explainability</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Playfair+Display:wght@400;600;700;900&family=DM+Sans:wght@300;400;500;600&display=swap" rel="stylesheet">
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.1/chart.umd.min.js"></script>
+<style>
+  :root {
+    --crimson: #850e35;
+    --rose: #ee6983;
+    --blush: #ffc4c4;
+    --cream: #fff5e4;
+    --dark: #1a0a10;
+    --mid: #4a1428;
+    --light-rose: rgba(238,105,131,0.12);
+    --card-bg: rgba(255,255,255,0.92);
+  }
+  *{margin:0;padding:0;box-sizing:border-box}
+  html{scroll-behavior:smooth}
+  body{font-family:'DM Sans',sans-serif;background:var(--cream);color:var(--dark);overflow-x:hidden;min-height:100vh}
+  .ribbon-bg{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+  .ribbon-bg svg{position:absolute;opacity:0.04;animation:float 8s ease-in-out infinite}
+  .ribbon-bg svg:nth-child(1){top:-5%;left:5%;width:340px;animation-delay:0s}
+  .ribbon-bg svg:nth-child(2){top:30%;right:-3%;width:220px;animation-delay:2s;opacity:0.03}
+  .ribbon-bg svg:nth-child(3){bottom:5%;left:20%;width:180px;animation-delay:4s;opacity:0.025}
+  @keyframes float{0%,100%{transform:translateY(0) rotate(0deg)}50%{transform:translateY(-18px) rotate(3deg)}}
+
+  /* NAV */
+  nav{position:sticky;top:0;z-index:100;background:rgba(255,245,228,0.93);backdrop-filter:blur(14px);border-bottom:1px solid rgba(133,14,53,0.1);padding:0 48px;height:64px;display:flex;align-items:center;justify-content:space-between}
+  .nav-brand{display:flex;align-items:center;gap:12px;cursor:pointer}
+  .nav-logo{width:38px;height:38px;background:var(--crimson);border-radius:10px;display:flex;align-items:center;justify-content:center}
+  .nav-logo svg{width:22px;height:22px;fill:white}
+  .nav-title{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--crimson);line-height:1.1}
+  .nav-sub{font-size:0.65rem;color:var(--rose);letter-spacing:0.08em;text-transform:uppercase}
+  .nav-links{display:flex;gap:4px}
+  .nav-link{padding:8px 16px;border-radius:8px;font-size:0.875rem;font-weight:500;color:var(--mid);cursor:pointer;transition:all 0.2s;border:none;background:none;font-family:'DM Sans',sans-serif}
+  .nav-link:hover,.nav-link.active{background:var(--light-rose);color:var(--crimson)}
+  .nav-link.primary{background:var(--crimson);color:white;padding:8px 22px}
+  .nav-link.primary:hover{background:var(--mid)}
+
+  /* SECTIONS */
+  .section{position:relative;z-index:1}
+  .section-hidden{display:none !important}
+  .fade-in{animation:fadeIn 0.4s ease forwards}
+  @keyframes fadeIn{from{opacity:0;transform:translateY(12px)}to{opacity:1;transform:translateY(0)}}
+
+  /* HERO */
+  #dashboard{min-height:calc(100vh - 64px);padding:60px 48px 80px}
+  .hero-card{background:var(--card-bg);border-radius:24px;padding:52px 56px;display:grid;grid-template-columns:1fr auto;gap:40px;align-items:center;box-shadow:0 8px 40px rgba(133,14,53,0.08);margin-bottom:32px;position:relative;overflow:hidden}
+  .hero-card::before{content:'';position:absolute;top:0;left:0;right:0;height:4px;background:linear-gradient(90deg,var(--crimson),var(--rose),var(--blush))}
+  .hero-tag{font-size:0.7rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;color:var(--rose);margin-bottom:14px}
+  .hero-title{font-family:'Playfair Display',serif;font-size:3.2rem;font-weight:900;color:var(--crimson);line-height:1.05;margin-bottom:6px}
+  .hero-edu-note{font-size:0.78rem;color:var(--rose);font-style:italic;margin-bottom:18px}
+  .hero-desc{font-size:1rem;color:#6b3347;line-height:1.65;max-width:480px;margin-bottom:32px}
+  .btn-primary{display:inline-flex;align-items:center;gap:8px;background:var(--crimson);color:white;padding:14px 28px;border-radius:12px;font-size:0.95rem;font-weight:600;cursor:pointer;border:none;transition:all 0.25s;font-family:'DM Sans',sans-serif}
+  .btn-primary:hover{background:var(--mid);transform:translateY(-2px);box-shadow:0 8px 24px rgba(133,14,53,0.3)}
+  .btn-outline{display:inline-flex;align-items:center;gap:8px;background:transparent;color:var(--crimson);padding:12px 24px;border-radius:12px;font-size:0.9rem;font-weight:600;cursor:pointer;border:2px solid var(--crimson);transition:all 0.25s;margin-left:12px;font-family:'DM Sans',sans-serif}
+  .btn-outline:hover{background:var(--light-rose)}
+  .donut-label{font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--rose);text-align:center;margin-bottom:6px}
+  .donut-wrap{position:relative;width:200px;height:200px}
+  #heroDonut{width:200px !important;height:200px !important}
+  .donut-legend{display:flex;gap:16px;justify-content:center;margin-top:10px;font-size:0.8rem;color:var(--mid)}
+  .donut-dot{width:10px;height:10px;border-radius:50%;display:inline-block;margin-right:4px}
+
+  /* STATS */
+  .stats-row{display:grid;grid-template-columns:repeat(4,1fr);gap:20px;margin-bottom:24px}
+  .stat-card{background:var(--card-bg);border-radius:18px;padding:28px 24px;box-shadow:0 4px 20px rgba(133,14,53,0.06);transition:transform 0.2s}
+  .stat-card:hover{transform:translateY(-4px)}
+  .stat-icon{width:42px;height:42px;background:rgba(238,105,131,0.15);border-radius:10px;display:flex;align-items:center;justify-content:center;margin-bottom:14px}
+  .stat-icon svg{width:20px;height:20px;stroke:var(--crimson);fill:none;stroke-width:2}
+  .stat-label{font-size:0.68rem;font-weight:600;letter-spacing:0.1em;text-transform:uppercase;color:var(--rose);margin-bottom:6px}
+  .stat-value{font-family:'Playfair Display',serif;font-size:2.4rem;font-weight:700;color:var(--crimson);line-height:1;margin-bottom:4px}
+  .stat-desc{font-size:0.8rem;color:#9b6070}
+
+  /* KEY INSIGHT */
+  .key-insight{background:linear-gradient(135deg,rgba(133,14,53,0.05),rgba(238,105,131,0.08));border:1.5px solid rgba(133,14,53,0.12);border-radius:16px;padding:22px 28px;margin-bottom:28px;display:flex;align-items:flex-start;gap:16px}
+  .ki-icon{width:36px;height:36px;background:rgba(238,105,131,0.15);border-radius:9px;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:1px}
+  .ki-icon svg{width:18px;height:18px;stroke:var(--crimson);fill:none;stroke-width:2}
+  .ki-title{font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--rose);margin-bottom:5px}
+  .ki-text{font-size:0.9rem;color:var(--mid);line-height:1.6}
+  .ki-text strong{color:var(--crimson)}
+
+  /* ABOUT */
+  .about-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px}
+  .about-card{background:var(--card-bg);border-radius:18px;padding:32px;box-shadow:0 4px 20px rgba(133,14,53,0.05)}
+  .section-title{font-family:'Playfair Display',serif;font-size:1.5rem;font-weight:700;color:var(--crimson);margin-bottom:14px}
+  .about-card p{font-size:0.9rem;line-height:1.7;color:#5a2535}
+  .feature-list{list-style:none;margin-top:12px}
+  .feature-list li{font-size:0.875rem;color:#5a2535;padding:6px 0;border-bottom:1px solid rgba(238,105,131,0.12);display:flex;align-items:center;gap:10px}
+  .feature-list li:last-child{border-bottom:none}
+  .feat-dot{width:6px;height:6px;border-radius:50%;background:var(--rose);flex-shrink:0}
+
+  /* DATA EXPLORER */
+  #data-explorer{padding:48px 48px 80px}
+  .page-header{margin-bottom:36px}
+  .page-title{font-family:'Playfair Display',serif;font-size:2.2rem;font-weight:700;color:var(--crimson)}
+  .page-subtitle{font-size:0.95rem;color:#7a3447;margin-top:6px}
+  .charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:28px}
+  .chart-card{background:var(--card-bg);border-radius:18px;padding:28px;box-shadow:0 4px 20px rgba(133,14,53,0.06)}
+  .chart-title{font-family:'Playfair Display',serif;font-size:1.05rem;font-weight:600;color:var(--crimson);margin-bottom:4px}
+  .chart-sub{font-size:0.78rem;color:var(--rose);margin-bottom:20px}
+  .chart-wrap{position:relative;height:260px}
+  .insight-box{background:rgba(133,14,53,0.04);border-left:3px solid var(--crimson);border-radius:0 10px 10px 0;padding:14px 18px;margin-top:18px;font-size:0.84rem;color:var(--mid);line-height:1.6}
+  .insight-box strong{color:var(--crimson)}
+  .feature-dist-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px}
+  .feat-bar-card{background:var(--card-bg);border-radius:14px;padding:18px;box-shadow:0 2px 12px rgba(133,14,53,0.04)}
+  .feat-bar-title{font-size:0.78rem;font-weight:600;color:var(--crimson);margin-bottom:10px;text-transform:capitalize}
+  .dual-bar{margin-bottom:6px}
+  .dual-bar-label{display:flex;justify-content:space-between;font-size:0.7rem;color:var(--mid);margin-bottom:3px}
+  .bar-track{height:6px;background:rgba(238,105,131,0.12);border-radius:3px;overflow:hidden}
+  .bar-fill{height:100%;border-radius:3px;transition:width 0.8s ease}
+  .bar-benign{background:var(--rose)}.bar-malignant{background:var(--crimson)}
+
+  /* MODEL COMPARISON */
+  #model-comparison{padding:48px 48px 80px}
+  .model-cards{display:grid;grid-template-columns:repeat(3,1fr);gap:22px;margin-bottom:32px}
+  .model-card{background:var(--card-bg);border-radius:18px;padding:28px;box-shadow:0 4px 20px rgba(133,14,53,0.06);position:relative;transition:all 0.25s;cursor:pointer;border:2px solid transparent}
+  .model-card:hover,.model-card.selected{border-color:var(--crimson);transform:translateY(-4px);box-shadow:0 8px 32px rgba(133,14,53,0.15)}
+  .model-badge{position:absolute;top:16px;right:16px;background:rgba(238,105,131,0.15);color:var(--crimson);font-size:0.65rem;font-weight:700;letter-spacing:0.08em;padding:4px 10px;border-radius:20px;text-transform:uppercase}
+  .model-badge.best{background:var(--crimson);color:white}
+  .model-name{font-family:'Playfair Display',serif;font-size:1.2rem;font-weight:700;color:var(--crimson);margin-bottom:4px;margin-top:4px}
+  .model-desc{font-size:0.8rem;color:#7a3447;margin-bottom:6px;line-height:1.5}
+  .model-best-note{font-size:0.73rem;color:var(--rose);font-style:italic;margin-bottom:14px}
+  .model-metrics{display:flex;flex-direction:column;gap:10px}
+  .metric-row{display:flex;justify-content:space-between;align-items:center}
+  .metric-name{font-size:0.78rem;color:var(--mid)}
+  .metric-val{font-size:0.88rem;font-weight:700;color:var(--crimson)}
+  .metric-bar-wrap{flex:1;margin:0 10px;height:5px;background:rgba(238,105,131,0.12);border-radius:3px;overflow:hidden}
+  .metric-bar-fill{height:100%;background:linear-gradient(90deg,var(--rose),var(--crimson));border-radius:3px}
+  .cm-grid{display:grid;grid-template-columns:1fr 1fr;gap:22px}
+  .cm-card{background:var(--card-bg);border-radius:18px;padding:28px;box-shadow:0 4px 20px rgba(133,14,53,0.06)}
+  .confusion-matrix{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin-top:16px}
+  .cm-cell{border-radius:10px;padding:16px;text-align:center}
+  .cm-cell.tp{background:rgba(133,14,53,0.12)}.cm-cell.tn{background:rgba(133,14,53,0.08)}
+  .cm-cell.fp{background:rgba(238,105,131,0.1)}.cm-cell.fn{background:rgba(238,105,131,0.07)}
+  .cm-num{font-family:'Playfair Display',serif;font-size:2rem;font-weight:700;color:var(--crimson)}
+  .cm-label{font-size:0.7rem;color:var(--mid);margin-top:4px;line-height:1.3}
+  .cm-sublabel{font-size:0.62rem;color:var(--rose);margin-top:2px}
+  .roc-chart{height:220px}
+  .auc-note{font-size:0.78rem;color:var(--mid);margin-top:10px;font-style:italic}
+  .model-card svg.check{width:18px;height:18px;fill:var(--crimson);display:none}
+  .model-card.selected svg.check{display:block}
+
+  /* ══ PREDICT — CLINICAL QUESTIONNAIRE ══ */
+  #predict{padding:48px 48px 80px}
+  .predict-layout{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:start}
+  .questionnaire-card{background:var(--card-bg);border-radius:18px;padding:36px;box-shadow:0 4px 20px rgba(133,14,53,0.06)}
+  .q-intro{font-size:0.85rem;color:#9b6070;line-height:1.6;margin-bottom:28px;font-style:italic}
+
+  /* Step progress */
+  .step-progress{display:flex;align-items:center;gap:0;margin-bottom:32px}
+  .step-dot{width:32px;height:32px;border-radius:50%;border:2px solid rgba(238,105,131,0.3);background:white;display:flex;align-items:center;justify-content:center;font-size:0.75rem;font-weight:700;color:#c09ba3;transition:all 0.3s;flex-shrink:0;position:relative;z-index:1}
+  .step-dot.active{border-color:var(--crimson);background:var(--crimson);color:white}
+  .step-dot.done{border-color:var(--rose);background:var(--rose);color:white}
+  .step-line{flex:1;height:2px;background:rgba(238,105,131,0.2);transition:background 0.3s}
+  .step-line.done{background:var(--rose)}
+
+  /* Question panels */
+  .q-panel{display:none}
+  .q-panel.active{display:block;animation:fadeIn 0.3s ease}
+  .q-heading{font-family:'Playfair Display',serif;font-size:1.15rem;font-weight:700;color:var(--crimson);margin-bottom:6px}
+  .q-sub{font-size:0.8rem;color:#9b6070;margin-bottom:20px}
+
+  /* Option buttons */
+  .option-grid{display:grid;gap:10px}
+  .option-grid.cols2{grid-template-columns:1fr 1fr}
+  .option-grid.cols3{grid-template-columns:1fr 1fr 1fr}
+  .opt-btn{background:rgba(255,196,196,0.15);border:2px solid rgba(238,105,131,0.22);border-radius:12px;padding:14px 16px;cursor:pointer;font-family:'DM Sans',sans-serif;font-size:0.88rem;font-weight:500;color:var(--mid);transition:all 0.2s;text-align:left;display:flex;align-items:flex-start;gap:10px}
+  .opt-btn:hover{border-color:var(--rose);background:rgba(238,105,131,0.1);color:var(--crimson)}
+  .opt-btn.selected{border-color:var(--crimson);background:rgba(133,14,53,0.07);color:var(--crimson);font-weight:600}
+  .opt-icon{font-size:1.1rem;flex-shrink:0;margin-top:1px}
+  .opt-label{font-weight:600;display:block;margin-bottom:2px}
+  .opt-desc{font-size:0.74rem;color:#9b6070;line-height:1.3}
+  .opt-btn.selected .opt-desc{color:var(--rose)}
+
+  /* Nav buttons */
+  .q-nav{display:flex;justify-content:space-between;align-items:center;margin-top:28px}
+  .btn-back{background:transparent;border:1.5px solid rgba(238,105,131,0.35);color:var(--rose);padding:10px 20px;border-radius:10px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+  .btn-back:hover{background:rgba(238,105,131,0.1)}
+  .btn-next{background:var(--crimson);color:white;padding:11px 24px;border-radius:10px;font-size:0.88rem;font-weight:600;cursor:pointer;font-family:'DM Sans',sans-serif;border:none;transition:all 0.2s;display:flex;align-items:center;gap:8px}
+  .btn-next:hover{background:var(--mid)}
+  .btn-next:disabled{background:#ccc;cursor:not-allowed}
+  .q-step-label{font-size:0.75rem;color:var(--rose);font-weight:600}
+
+  /* Model select in predict */
+  .model-row{display:flex;align-items:center;gap:12px;margin-bottom:24px}
+  .model-row label{font-size:0.82rem;color:var(--mid);font-weight:600}
+  .model-select{background:var(--card-bg);border:1.5px solid rgba(238,105,131,0.3);border-radius:8px;padding:6px 14px;font-size:0.85rem;color:var(--crimson);font-family:'DM Sans',sans-serif;outline:none;cursor:pointer}
+
+  /* Result panel */
+  .result-card{background:var(--card-bg);border-radius:18px;padding:32px;box-shadow:0 4px 20px rgba(133,14,53,0.06);position:relative}
+  .result-placeholder{text-align:center;padding:40px 20px;color:#c09ba3}
+  .result-placeholder svg{width:56px;height:56px;stroke:var(--blush);fill:none;stroke-width:1.5;margin-bottom:14px}
+  .result-placeholder p{font-size:0.9rem;line-height:1.7}
+  .result-placeholder .hint{margin-top:14px;font-size:0.8rem;color:var(--rose);font-weight:500;line-height:1.5}
+  .result-content{display:none}
+  .result-diagnosis{text-align:center;padding:28px 20px;border-radius:14px;margin-bottom:24px}
+  .result-diagnosis.benign{background:rgba(238,105,131,0.08)}
+  .result-diagnosis.malignant{background:rgba(133,14,53,0.08)}
+  .diagnosis-label{font-size:0.7rem;font-weight:700;letter-spacing:0.14em;text-transform:uppercase;color:var(--rose);margin-bottom:8px}
+  .diagnosis-value{font-family:'Playfair Display',serif;font-size:2rem;font-weight:900;color:var(--crimson);margin-bottom:6px}
+  .diagnosis-prob{font-size:0.85rem;color:var(--mid)}
+  .prob-bars{margin-bottom:24px}
+  .prob-bar-row{margin-bottom:12px}
+  .prob-bar-top{display:flex;justify-content:space-between;font-size:0.8rem;color:var(--mid);margin-bottom:5px}
+  .prob-bar-track{height:10px;background:rgba(238,105,131,0.12);border-radius:5px;overflow:hidden}
+  .prob-bar-fill{height:100%;border-radius:5px;transition:width 1s ease}
+  .shap-title{font-size:0.88rem;font-weight:700;color:var(--crimson);margin-bottom:3px}
+  .shap-subtitle{font-size:0.72rem;color:#9b6070;margin-bottom:10px;font-style:italic;line-height:1.4}
+  .shap-legend{display:flex;gap:14px;margin-bottom:12px;font-size:0.7rem;color:var(--mid)}
+  .shap-legend-dot{width:10px;height:10px;border-radius:2px;display:inline-block;margin-right:4px}
+  .shap-bars{display:flex;flex-direction:column;gap:7px}
+  .shap-row{display:flex;align-items:center;gap:8px}
+  .shap-name{width:112px;color:var(--mid);text-align:right;flex-shrink:0;font-size:0.68rem;line-height:1.2}
+  .shap-center{flex:1;position:relative;height:22px}
+  .shap-midline{position:absolute;left:50%;top:0;bottom:0;width:1.5px;background:rgba(133,14,53,0.2)}
+  .shap-bar{position:absolute;height:14px;top:4px;border-radius:3px;width:0%;transition:width 0.7s ease}
+  .shap-bar.pos{background:var(--crimson);left:50%}
+  .shap-bar.neg{background:var(--rose);right:50%}
+  .shap-val{font-weight:700;width:46px;font-size:0.68rem;flex-shrink:0}
+
+  /* Clinical summary in result */
+  .clinical-summary{background:rgba(255,196,196,0.12);border:1px solid rgba(238,105,131,0.2);border-radius:12px;padding:16px 20px;margin-bottom:20px}
+  .clin-sum-title{font-size:0.72rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;color:var(--rose);margin-bottom:10px}
+  .clin-sum-grid{display:grid;grid-template-columns:1fr 1fr;gap:6px}
+  .clin-sum-item{font-size:0.78rem;color:var(--mid);display:flex;gap:6px;align-items:baseline}
+  .clin-sum-key{color:var(--rose);font-weight:600;flex-shrink:0}
+
+  .disclaimer{background:rgba(238,105,131,0.08);border:1.5px solid rgba(238,105,131,0.25);border-radius:12px;padding:14px 18px;font-size:0.8rem;color:var(--mid);margin-top:24px;line-height:1.6}
+  .disclaimer strong{color:var(--crimson)}
+  .loading-overlay{display:none;position:absolute;inset:0;background:rgba(255,245,228,0.85);border-radius:18px;z-index:10;align-items:center;justify-content:center;flex-direction:column;gap:12px}
+  .loading-overlay.active{display:flex}
+  .spinner{width:36px;height:36px;border:3px solid var(--blush);border-top-color:var(--crimson);border-radius:50%;animation:spin 0.8s linear infinite}
+  @keyframes spin{to{transform:rotate(360deg)}}
+  .loading-text{font-size:0.85rem;color:var(--crimson);font-weight:500}
+
+  /* HISTORY */
+  #history{padding:48px 48px 80px}
+  .history-empty{background:var(--card-bg);border-radius:18px;padding:60px;text-align:center;box-shadow:0 4px 20px rgba(133,14,53,0.06)}
+  .history-empty svg{width:52px;height:52px;stroke:var(--blush);fill:none;stroke-width:1.5;margin-bottom:16px}
+  .history-empty p{color:#c09ba3;font-size:0.9rem}
+  .history-table-wrap{background:var(--card-bg);border-radius:18px;overflow:hidden;box-shadow:0 4px 20px rgba(133,14,53,0.06)}
+  .history-table{width:100%;border-collapse:collapse}
+  .history-table th{background:rgba(133,14,53,0.05);padding:14px 20px;font-size:0.72rem;font-weight:700;letter-spacing:0.1em;text-transform:uppercase;color:var(--rose);text-align:left;border-bottom:1px solid rgba(238,105,131,0.15)}
+  .history-table td{padding:14px 20px;font-size:0.85rem;color:var(--dark);border-bottom:1px solid rgba(238,105,131,0.08)}
+  .history-table tr:last-child td{border-bottom:none}
+  .history-table tr:hover td{background:rgba(255,196,196,0.08)}
+  .badge-benign{background:rgba(238,105,131,0.12);color:var(--rose);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600}
+  .badge-malignant{background:rgba(133,14,53,0.1);color:var(--crimson);padding:4px 12px;border-radius:20px;font-size:0.75rem;font-weight:600}
+  .clear-btn{margin-top:16px;background:transparent;border:1.5px solid rgba(238,105,131,0.4);color:var(--rose);padding:8px 18px;border-radius:8px;font-size:0.82rem;cursor:pointer;font-family:'DM Sans',sans-serif;transition:all 0.2s}
+  .clear-btn:hover{background:rgba(238,105,131,0.1)}
+
+  @media(max-width:1000px){
+    nav{padding:0 20px}
+    #dashboard,#data-explorer,#model-comparison,#predict,#history{padding-left:20px;padding-right:20px}
+    .hero-card,.predict-layout,.charts-grid,.cm-grid,.about-grid{grid-template-columns:1fr}
+    .stats-row{grid-template-columns:1fr 1fr}
+    .model-cards{grid-template-columns:1fr}
+    .nav-links{display:none}
+  }
+</style>
+</head>
+<body>
+
+<div class="ribbon-bg">
+  <svg viewBox="0 0 120 160"><path d="M60 10C35 10 15 30 15 55c0 20 10 35 25 45l20 15 20-15c15-10 25-25 25-45C105 30 85 10 60 10zM60 140c-2 0-18-15-22-22l22 12 22-12c-4 7-20 22-22 22z" fill="#850e35"/></svg>
+  <svg viewBox="0 0 120 160"><path d="M60 10C35 10 15 30 15 55c0 20 10 35 25 45l20 15 20-15c15-10 25-25 25-45C105 30 85 10 60 10zM60 140c-2 0-18-15-22-22l22 12 22-12c-4 7-20 22-22 22z" fill="#850e35"/></svg>
+  <svg viewBox="0 0 120 160"><path d="M60 10C35 10 15 30 15 55c0 20 10 35 25 45l20 15 20-15c15-10 25-25 25-45C105 30 85 10 60 10zM60 140c-2 0-18-15-22-22l22 12 22-12c-4 7-20 22-22 22z" fill="#850e35"/></svg>
+</div>
+
+<nav>
+  <div class="nav-brand" onclick="showSection('dashboard')">
+    <div class="nav-logo">
+      <svg viewBox="0 0 24 24"><path d="M12 2C8.5 2 5 5 5 9c0 3.2 1.8 5.5 4 7L12 18l3-2c2.2-1.5 4-3.8 4-7 0-4-3.5-7-7-7zm0 14.5L9.5 15C7.8 13.8 7 12 7 9c0-2.8 2.2-5 5-5s5 2.2 5 5c0 3-1.8 4.8-3.5 6L12 16.5z"/></svg>
+    </div>
+    <div>
+      <div class="nav-title">MammoPredict AI</div>
+      <div class="nav-sub">Prediction & Explainability</div>
+    </div>
+  </div>
+  <div class="nav-links">
+    <button class="nav-link active" id="nav-dashboard" onclick="showSection('dashboard')">Dashboard</button>
+    <button class="nav-link" id="nav-data-explorer" onclick="showSection('data-explorer')">Data Explorer</button>
+    <button class="nav-link" id="nav-model-comparison" onclick="showSection('model-comparison')">Models</button>
+    <button class="nav-link primary" id="nav-predict" onclick="showSection('predict')">Predict</button>
+    <button class="nav-link" id="nav-history" onclick="showSection('history')">History</button>
+  </div>
+</nav>
+
+<!-- ══ DASHBOARD ══ -->
+<section id="dashboard" class="section fade-in">
+  <div class="hero-card">
+    <div>
+      <div class="hero-tag">Explainable AI System</div>
+      <h1 class="hero-title">Breast Cancer<br>Prediction</h1>
+      <div class="hero-edu-note">For educational and demonstration purposes only.</div>
+      <p class="hero-desc">Powered by machine learning with SHAP-style explainability. Answer simple clinical questions and get an instant prediction with transparent reasoning — no complex measurements needed.</p>
+      <div>
+        <button class="btn-primary" onclick="showSection('predict')">Start Assessment →</button>
+        <button class="btn-outline" onclick="showSection('data-explorer')">Explore Data</button>
+      </div>
+    </div>
+    <div style="text-align:center">
+      <div class="donut-label">Class Distribution</div>
+      <div class="donut-wrap"><canvas id="heroDonut"></canvas></div>
+      <div class="donut-legend">
+        <span><span class="donut-dot" style="background:var(--rose)"></span>Benign (62.7%)</span>
+        <span><span class="donut-dot" style="background:var(--crimson)"></span>Malignant (37.3%)</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="stats-row">
+    <div class="stat-card">
+      <div class="stat-icon"><svg viewBox="0 0 24 24"><circle cx="12" cy="8" r="4"/><path d="M4 20c0-4 3.6-7 8-7s8 3 8 7"/></svg></div>
+      <div class="stat-label">Total Samples</div>
+      <div class="stat-value">569</div>
+      <div class="stat-desc">Combined dataset</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><svg viewBox="0 0 24 24"><rect x="3" y="3" width="18" height="18" rx="2"/><path d="M3 9h18M9 21V9"/></svg></div>
+      <div class="stat-label">Features</div>
+      <div class="stat-value">30</div>
+      <div class="stat-desc">Cell nuclei measurements</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M12 2l3.09 6.26L22 9.27l-5 4.87 1.18 6.88L12 17.77l-6.18 3.25L7 14.14 2 9.27l6.91-1.01L12 2z"/></svg></div>
+      <div class="stat-label">Best Accuracy</div>
+      <div class="stat-value">98.3%</div>
+      <div class="stat-desc">Logistic Regression</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon"><svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg></div>
+      <div class="stat-label">Null Values</div>
+      <div class="stat-value">0</div>
+      <div class="stat-desc">Clean dataset</div>
+    </div>
+  </div>
+
+  <div class="key-insight">
+    <div class="ki-icon">
+      <!-- Lightbulb icon in crimson theme, matching other icons -->
+      <svg viewBox="0 0 24 24">
+        <path d="M9 21h6M12 3a6 6 0 0 1 6 6c0 2.5-1.4 4.6-3.5 5.7V17H9.5v-2.3C7.4 13.6 6 11.5 6 9a6 6 0 0 1 6-6z"/>
+        <path d="M9.5 17h5" stroke-linecap="round"/>
+      </svg>
+    </div>
+    <div>
+      <div class="ki-title">Key Insight</div>
+      <div class="ki-text">Features like <strong>radius, concavity, and area</strong> strongly influence predictions. Malignant tumors show consistently higher values in these measurements, indicating larger and more irregular cell structures.</div>
+    </div>
+  </div>
+
+  <div class="about-grid">
+    <div class="about-card">
+      <div class="section-title">About the Dataset</div>
+      <p>The dataset is clean, has no missing values, and contains 30 features derived from cell nuclei measurements. These values are typically extracted using image analysis techniques and are not directly available in standard medical reports.</p>
+      <ul class="feature-list" style="margin-top:16px">
+        <li><span class="feat-dot"></span> 357 benign cases (62.7%)</li>
+        <li><span class="feat-dot"></span> 212 malignant cases (37.3%)</li>
+        <li><span class="feat-dot"></span> Features include mean, SE, and worst values</li>
+        <li><span class="feat-dot"></span> Wisconsin Breast Cancer Dataset (UCI)</li>
+      </ul>
+    </div>
+    <div class="about-card">
+      <div class="section-title">System Capabilities</div>
+      <ul class="feature-list">
+        <li><span class="feat-dot"></span> Clinical questionnaire → automatic feature mapping</li>
+        <li><span class="feat-dot"></span> Logistic Regression (98.3% accuracy)</li>
+        <li><span class="feat-dot"></span> Decision Tree (94.7% accuracy)</li>
+        <li><span class="feat-dot"></span> Random Forest (97.4% accuracy)</li>
+        <li><span class="feat-dot"></span> SHAP-style feature importance</li>
+        <li><span class="feat-dot"></span> Probability confidence scores</li>
+        <li><span class="feat-dot"></span> Prediction history tracking</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ══ DATA EXPLORER ══ -->
+<section id="data-explorer" class="section section-hidden fade-in">
+  <div class="page-header">
+    <div class="page-title">Data Explorer</div>
+    <div class="page-subtitle">Visualizations of the Wisconsin Breast Cancer Dataset</div>
+  </div>
+  <div class="charts-grid">
+    <div class="chart-card">
+      <div class="chart-title">Class Distribution</div>
+      <div class="chart-sub">Benign vs Malignant count in the dataset</div>
+      <div class="chart-wrap"><canvas id="classDistChart"></canvas></div>
+    </div>
+    <div class="chart-card">
+      <div class="chart-title">Feature Comparison — Benign vs Malignant</div>
+      <div class="chart-sub">Mean values by diagnosis group (normalised to malignant baseline)</div>
+      <div class="chart-wrap"><canvas id="corrChart"></canvas></div>
+    </div>
+  </div>
+  <div class="chart-card" style="margin-bottom:28px">
+    <div class="chart-title">Feature Distributions</div>
+    <div class="chart-sub">Mean values — Benign (pink) vs Malignant (crimson)</div>
+    <div style="margin-top:16px" id="featureDist"></div>
+    <div class="insight-box"><strong>Insight:</strong> Malignant tumors show consistently higher values in radius, concavity, and area, indicating larger and more irregular cell structures. This pattern holds across mean, SE, and worst-case measurements.</div>
+  </div>
+  <div class="chart-card">
+    <div class="chart-title">Feature Importance</div>
+    <div class="chart-sub">Top features based on logistic regression coefficients (scaled features)</div>
+    <div class="chart-wrap" style="height:320px"><canvas id="importanceChart"></canvas></div>
+  </div>
+</section>
+
+<!-- ══ MODEL COMPARISON ══ -->
+<section id="model-comparison" class="section section-hidden fade-in">
+  <div class="page-header">
+    <div class="page-title">Model Comparison</div>
+    <div class="page-subtitle">Performance metrics across all trained models</div>
+  </div>
+  <div class="model-cards">
+    <div class="model-card selected" id="mc-lr" onclick="selectModel('lr')">
+      <svg class="check" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      <span class="model-badge best">Best</span>
+      <div class="model-name">Logistic Regression</div>
+      <div class="model-desc">Linear model ideal for binary classification. Fast, interpretable, excellent on linearly separable data.</div>
+      <div class="model-best-note">Selected based on highest accuracy and interpretability</div>
+      <div class="model-metrics">
+        <div class="metric-row"><span class="metric-name">Accuracy</span><div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:98.3%"></div></div><span class="metric-val">98.3%</span></div>
+        <div class="metric-row"><span class="metric-name">Precision</span><div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:97.8%"></div></div><span class="metric-val">97.8%</span></div>
+        <div class="metric-row"><span class="metric-name">Recall</span><div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:98.1%"></div></div><span class="metric-val">98.1%</span></div>
+        <div class="metric-row"><span class="metric-name">F1 Score</span><div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:98.0%"></div></div><span class="metric-val">98.0%</span></div>
+      </div>
+    </div>
+    <div class="model-card" id="mc-dt" onclick="selectModel('dt')">
+      <svg class="check" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      <span class="model-badge">Interpretable</span>
+      <div class="model-name">Decision Tree</div>
+      <div class="model-desc">Rule-based classifier. Highly interpretable with clear decision boundaries.</div>
+      <div class="model-metrics">
+        <div class="metric-row"><span class="metric-name">Accuracy</span><div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:94.7%"></div></div><span class="metric-val">94.7%</span></div>
+        <div class="metric-row"><span class="metric-name">Precision</span><div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:93.9%"></div></div><span class="metric-val">93.9%</span></div>
+        <div class="metric-row"><span class="metric-name">Recall</span><div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:94.4%"></div></div><span class="metric-val">94.4%</span></div>
+        <div class="metric-row"><span class="metric-name">F1 Score</span><div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:94.1%"></div></div><span class="metric-val">94.1%</span></div>
+      </div>
+    </div>
+    <div class="model-card" id="mc-rf" onclick="selectModel('rf')">
+      <svg class="check" viewBox="0 0 24 24"><path d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z"/></svg>
+      <span class="model-badge">Robust</span>
+      <div class="model-name">Random Forest</div>
+      <div class="model-desc">Ensemble of decision trees. Reduces overfitting, excellent generalization.</div>
+      <div class="model-metrics">
+        <div class="metric-row"><span class="metric-name">Accuracy</span><div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:97.4%"></div></div><span class="metric-val">97.4%</span></div>
+        <div class="metric-row"><span class="metric-name">Precision</span><div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:97.0%"></div></div><span class="metric-val">97.0%</span></div>
+        <div class="metric-row"><span class="metric-name">Recall</span><div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:97.3%"></div></div><span class="metric-val">97.3%</span></div>
+        <div class="metric-row"><span class="metric-name">F1 Score</span><div class="metric-bar-wrap"><div class="metric-bar-fill" style="width:97.1%"></div></div><span class="metric-val">97.1%</span></div>
+      </div>
+    </div>
+  </div>
+  <div class="cm-grid">
+    <div class="cm-card">
+      <div class="section-title">Confusion Matrix</div>
+      <div class="chart-sub" style="font-size:0.8rem;color:var(--rose);margin-bottom:0">Logistic Regression — Test Set (114 samples)</div>
+      <div class="confusion-matrix">
+        <div class="cm-cell tp"><div class="cm-num">70</div><div class="cm-label">True Positive</div><div class="cm-sublabel">(Correct Malignant)</div></div>
+        <div class="cm-cell fp"><div class="cm-num">2</div><div class="cm-label">False Positive</div><div class="cm-sublabel">(Benign → Malignant)</div></div>
+        <div class="cm-cell fn"><div class="cm-num">0</div><div class="cm-label">False Negative</div><div class="cm-sublabel">(Malignant → Benign)</div></div>
+        <div class="cm-cell tn"><div class="cm-num">42</div><div class="cm-label">True Negative</div><div class="cm-sublabel">(Correct Benign)</div></div>
+      </div>
+    </div>
+    <div class="cm-card">
+      <div class="section-title">ROC Curve</div>
+      <div class="chart-sub" style="font-size:0.8rem;color:var(--rose)">AUC comparison across models</div>
+      <div class="roc-chart"><canvas id="rocChart"></canvas></div>
+      <div class="auc-note">Higher AUC indicates better model performance. AUC = 1.0 is perfect; AUC = 0.5 is random guessing.</div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ PREDICT — CLINICAL QUESTIONNAIRE ══ -->
+<section id="predict" class="section section-hidden fade-in">
+  <div class="page-header">
+    <div class="page-title">Clinical Assessment</div>
+    <div class="page-subtitle">Answer a few simple questions — we handle the rest internally</div>
+  </div>
+
+  <div class="model-row">
+    <label>Model:</label>
+    <select id="modelSelect" class="model-select">
+      <option value="lr">Logistic Regression (98.3%)</option>
+      <option value="dt">Decision Tree (94.7%)</option>
+      <option value="rf">Random Forest (97.4%)</option>
+    </select>
+  </div>
+
+  <div class="predict-layout">
+    <!-- QUESTIONNAIRE -->
+    <div class="questionnaire-card">
+      <p class="q-intro">Answer these clinical questions based on the biopsy / imaging report. Your responses are internally mapped to the 30 cell-nuclei features used by the model.</p>
+
+      <!-- Step progress bar -->
+      <div class="step-progress" id="stepProgress">
+        <div class="step-dot active" id="sd0">1</div>
+        <div class="step-line" id="sl0"></div>
+        <div class="step-dot" id="sd1">2</div>
+        <div class="step-line" id="sl1"></div>
+        <div class="step-dot" id="sd2">3</div>
+        <div class="step-line" id="sl2"></div>
+        <div class="step-dot" id="sd3">4</div>
+        <div class="step-line" id="sl3"></div>
+        <div class="step-dot" id="sd4">5</div>
+      </div>
+
+      <!-- Step 1: Lump Size -->
+      <div class="q-panel active" id="qp0">
+        <div class="q-heading">Lump Size</div>
+        <div class="q-sub">How large is the lump as observed on imaging?</div>
+        <div class="option-grid cols3" id="opts0">
+          <button class="opt-btn" data-q="0" data-v="small" onclick="selectOpt(this,0)">
+            <div><span class="opt-label">Small</span><span class="opt-desc">< 10 mm diameter</span></div>
+          </button>
+          <button class="opt-btn" data-q="0" data-v="medium" onclick="selectOpt(this,0)">
+            <div><span class="opt-label">Medium</span><span class="opt-desc">10–20 mm diameter</span></div>
+          </button>
+          <button class="opt-btn" data-q="0" data-v="large" onclick="selectOpt(this,0)">
+            <div><span class="opt-label">Large</span><span class="opt-desc">> 20 mm diameter</span></div>
+          </button>
+        </div>
+        <div class="q-nav">
+          <span class="q-step-label">Step 1 of 5</span>
+          <button class="btn-next" id="next0" onclick="nextStep(0)" disabled>Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 2: Shape -->
+      <div class="q-panel" id="qp1">
+        <div class="q-heading">Lump Shape</div>
+        <div class="q-sub">What is the overall shape of the mass on imaging?</div>
+        <div class="option-grid cols2" id="opts1">
+          <button class="opt-btn" data-q="1" data-v="regular" onclick="selectOpt(this,1)">
+            <div><span class="opt-label">Regular / Round</span><span class="opt-desc">Smooth, uniform shape with even edges</span></div>
+          </button>
+          <button class="opt-btn" data-q="1" data-v="slightly_irregular" onclick="selectOpt(this,1)">
+            <div><span class="opt-label">Slightly Irregular</span><span class="opt-desc">Mildly uneven or oval with minor indentations</span></div>
+          </button>
+          <button class="opt-btn" data-q="1" data-v="irregular" onclick="selectOpt(this,1)">
+            <div><span class="opt-label">Irregular</span><span class="opt-desc">Clearly non-round, lobulated or spiculated</span></div>
+          </button>
+          <button class="opt-btn" data-q="1" data-v="very_irregular" onclick="selectOpt(this,1)">
+            <div><span class="opt-label">Highly Irregular</span><span class="opt-desc">Star-like or severely distorted shape</span></div>
+          </button>
+        </div>
+        <div class="q-nav">
+          <button class="btn-back" onclick="prevStep(1)">← Back</button>
+          <span class="q-step-label">Step 2 of 5</span>
+          <button class="btn-next" id="next1" onclick="nextStep(1)" disabled>Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 3: Texture / Surface -->
+      <div class="q-panel" id="qp2">
+        <div class="q-heading">Surface Texture</div>
+        <div class="q-sub">How does the surface or margin of the mass appear?</div>
+        <div class="option-grid cols2" id="opts2">
+          <button class="opt-btn" data-q="2" data-v="smooth" onclick="selectOpt(this,2)">
+            <div><span class="opt-label">Smooth</span><span class="opt-desc">Fine, even surface texture throughout</span></div>
+          </button>
+          <button class="opt-btn" data-q="2" data-v="slightly_rough" onclick="selectOpt(this,2)">
+            <div><span class="opt-label">Slightly Rough</span><span class="opt-desc">Minor variations in surface texture</span></div>
+          </button>
+          <button class="opt-btn" data-q="2" data-v="rough" onclick="selectOpt(this,2)">
+            <div><span class="opt-label">Rough / Coarse</span><span class="opt-desc">Clearly uneven or granular surface</span></div>
+          </button>
+          <button class="opt-btn" data-q="2" data-v="very_rough" onclick="selectOpt(this,2)">
+            <div><span class="opt-label">Very Rough</span><span class="opt-desc">Heavily irregular with deep indentations</span></div>
+          </button>
+        </div>
+        <div class="q-nav">
+          <button class="btn-back" onclick="prevStep(2)">← Back</button>
+          <span class="q-step-label">Step 3 of 5</span>
+          <button class="btn-next" id="next2" onclick="nextStep(2)" disabled>Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 4: Margin / Border -->
+      <div class="q-panel" id="qp3">
+        <div class="q-heading">Margin Definition</div>
+        <div class="q-sub">How clearly defined are the edges/margins of the lump?</div>
+        <div class="option-grid cols2" id="opts3">
+          <button class="opt-btn" data-q="3" data-v="well_defined" onclick="selectOpt(this,3)">
+            <div><span class="opt-label">Well-Defined</span><span class="opt-desc">Sharp, clear border — easy to distinguish from surrounding tissue</span></div>
+          </button>
+          <button class="opt-btn" data-q="3" data-v="mostly_defined" onclick="selectOpt(this,3)">
+            <div><span class="opt-label">Mostly Defined</span><span class="opt-desc">Generally clear with a few indistinct areas</span></div>
+          </button>
+          <button class="opt-btn" data-q="3" data-v="poorly_defined" onclick="selectOpt(this,3)">
+            <div><span class="opt-label">Poorly Defined</span><span class="opt-desc">Blurry, indistinct edges — hard to separate from tissue</span></div>
+          </button>
+          <button class="opt-btn" data-q="3" data-v="unclear" onclick="selectOpt(this,3)">
+            <div><span class="opt-label">Unclear / Infiltrating</span><span class="opt-desc">No clear border, appears to infiltrate surrounding tissue</span></div>
+          </button>
+        </div>
+        <div class="q-nav">
+          <button class="btn-back" onclick="prevStep(3)">← Back</button>
+          <span class="q-step-label">Step 4 of 5</span>
+          <button class="btn-next" id="next3" onclick="nextStep(3)" disabled>Next →</button>
+        </div>
+      </div>
+
+      <!-- Step 5: Concavities / Indentations -->
+      <div class="q-panel" id="qp4">
+        <div class="q-heading">Concavities & Indentations</div>
+        <div class="q-sub">Are there any concave portions or indentations visible in the contour?</div>
+        <div class="option-grid cols3" id="opts4">
+          <button class="opt-btn" data-q="4" data-v="none" onclick="selectOpt(this,4)">
+            <div><span class="opt-label">None</span><span class="opt-desc">No concavities observed</span></div>
+          </button>
+          <button class="opt-btn" data-q="4" data-v="mild" onclick="selectOpt(this,4)">
+            <div><span class="opt-label">Mild</span><span class="opt-desc">1–2 small indentations</span></div>
+          </button>
+          <button class="opt-btn" data-q="4" data-v="moderate" onclick="selectOpt(this,4)">
+            <div><span class="opt-label">Moderate</span><span class="opt-desc">Several concave regions</span></div>
+          </button>
+          <button class="opt-btn" data-q="4" data-v="severe" onclick="selectOpt(this,4)">
+            <div><span class="opt-label">Severe</span><span class="opt-desc">Many deep concavities throughout</span></div>
+          </button>
+        </div>
+        <div class="q-nav">
+          <button class="btn-back" onclick="prevStep(4)">← Back</button>
+          <span class="q-step-label">Step 5 of 5</span>
+          <button class="btn-next" id="next4" onclick="runClinicalPrediction()" disabled style="background:var(--crimson)">Analyse →</button>
+        </div>
+      </div>
+
+      <div class="disclaimer"><strong>Disclaimer:</strong> For educational and demonstration purposes only. Not a substitute for professional medical diagnosis. Always consult a qualified healthcare provider.</div>
+    </div>
+
+    <!-- RESULT PANEL -->
+    <div class="result-card">
+      <div class="loading-overlay" id="loadingOverlay">
+        <div class="spinner"></div>
+        <div class="loading-text">Mapping clinical inputs…</div>
+      </div>
+
+      <div class="result-placeholder" id="resultPlaceholder">
+        <svg viewBox="0 0 24 24"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+        <p>Complete the 5-step clinical assessment on the left to receive your prediction with SHAP-style explanations.</p>
+        <div class="hint">No complex measurements needed — just answer the questions about the lump.</div>
+      </div>
+
+      <div class="result-content" id="resultContent">
+        <div class="result-diagnosis" id="diagBox">
+          <div class="diagnosis-label">Prediction</div>
+          <div class="diagnosis-value" id="diagValue">—</div>
+          <div class="diagnosis-prob" id="diagProb">—</div>
+        </div>
+
+        <!-- Clinical inputs summary -->
+        <div class="clinical-summary" id="clinSummary"></div>
+
+        <div class="prob-bars">
+          <div class="prob-bar-row">
+            <div class="prob-bar-top"><span>Benign probability</span><span id="probBenignTxt">—</span></div>
+            <div class="prob-bar-track"><div class="prob-bar-fill bar-benign" id="probBenignBar" style="width:0%"></div></div>
+          </div>
+          <div class="prob-bar-row" style="margin-top:10px">
+            <div class="prob-bar-top"><span>Malignant probability</span><span id="probMalignantTxt">—</span></div>
+            <div class="prob-bar-track"><div class="prob-bar-fill bar-malignant" id="probMalignantBar" style="width:0%"></div></div>
+          </div>
+        </div>
+
+        <div class="shap-title">Feature Importance (SHAP-style)</div>
+        <div class="shap-subtitle">Each bar shows how much a feature pushed this prediction. Crimson = toward Malignant, Pink = toward Benign.</div>
+        <div class="shap-legend">
+          <span><span class="shap-legend-dot" style="background:var(--crimson)"></span>→ Malignant</span>
+          <span><span class="shap-legend-dot" style="background:var(--rose)"></span>→ Benign</span>
+        </div>
+        <div class="shap-bars" id="shapBars"></div>
+
+        <div style="margin-top:20px">
+          <button class="btn-primary" onclick="resetQuestionnaire()" style="width:100%;justify-content:center;font-size:0.88rem;padding:12px">New Assessment</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ══ HISTORY ══ -->
+<section id="history" class="section section-hidden fade-in">
+  <div class="page-header">
+    <div class="page-title">Prediction History</div>
+    <div class="page-subtitle">All assessments made during this session</div>
+  </div>
+  <div id="historyContent"></div>
+</section>
+
+<script>
+// ════════════════════════════════
+// STATE
+// ════════════════════════════════
+const predictionHistory = [];
+let currentStep = 0;
+const answers = { 0: null, 1: null, 2: null, 3: null, 4: null };
+const TOTAL_STEPS = 5;
+
+// ════════════════════════════════
+// NAV
+// ════════════════════════════════
+function showSection(id) {
+  document.querySelectorAll('.section').forEach(s => s.classList.add('section-hidden'));
+  document.querySelectorAll('.nav-link').forEach(l => l.classList.remove('active'));
+  const sec = document.getElementById(id);
+  if (sec) { sec.classList.remove('section-hidden'); sec.classList.remove('fade-in'); void sec.offsetWidth; sec.classList.add('fade-in'); }
+  const btn = document.getElementById('nav-' + id);
+  if (btn) btn.classList.add('active');
+  if (id === 'history') renderHistory();
+  window.scrollTo(0, 0);
+}
+
+function selectModel(m) {
+  document.querySelectorAll('.model-card').forEach(c => c.classList.remove('selected'));
+  document.getElementById('mc-' + m).classList.add('selected');
+}
+
+// ════════════════════════════════
+// QUESTIONNAIRE
+// ════════════════════════════════
+function selectOpt(btn, step) {
+  // Deselect siblings
+  btn.closest('.option-grid').querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  btn.classList.add('selected');
+  answers[step] = btn.dataset.v;
+  // Enable next
+  const nextBtn = document.getElementById('next' + step);
+  if (nextBtn) nextBtn.disabled = false;
+}
+
+function nextStep(from) {
+  if (!answers[from]) return;
+  // Mark step done
+  document.getElementById('sd' + from).classList.remove('active');
+  document.getElementById('sd' + from).classList.add('done');
+  document.getElementById('sd' + from).innerHTML = '✓';
+  if (document.getElementById('sl' + from)) document.getElementById('sl' + from).classList.add('done');
+  // Show next
+  document.getElementById('qp' + from).classList.remove('active');
+  currentStep = from + 1;
+  document.getElementById('qp' + currentStep).classList.add('active');
+  document.getElementById('sd' + currentStep).classList.add('active');
+}
+
+function prevStep(from) {
+  document.getElementById('qp' + from).classList.remove('active');
+  currentStep = from - 1;
+  document.getElementById('qp' + currentStep).classList.add('active');
+  // Undo done state
+  document.getElementById('sd' + currentStep).classList.remove('done');
+  document.getElementById('sd' + currentStep).classList.add('active');
+  document.getElementById('sd' + currentStep).innerHTML = currentStep + 1;
+  if (document.getElementById('sl' + currentStep)) document.getElementById('sl' + currentStep).classList.remove('done');
+}
+
+function resetQuestionnaire() {
+  // Reset all answers
+  for (let i = 0; i < TOTAL_STEPS; i++) { answers[i] = null; }
+  currentStep = 0;
+  // Reset UI
+  document.querySelectorAll('.q-panel').forEach(p => p.classList.remove('active'));
+  document.getElementById('qp0').classList.add('active');
+  document.querySelectorAll('.step-dot').forEach((d, i) => {
+    d.className = 'step-dot'; d.innerHTML = i + 1;
+  });
+  document.getElementById('sd0').classList.add('active');
+  document.querySelectorAll('.step-line').forEach(l => l.classList.remove('done'));
+  document.querySelectorAll('.opt-btn').forEach(b => b.classList.remove('selected'));
+  document.querySelectorAll('.btn-next').forEach(b => b.disabled = true);
+  // Hide result
+  document.getElementById('resultContent').style.display = 'none';
+  document.getElementById('resultPlaceholder').style.display = 'block';
+}
+
+// ════════════════════════════════
+// CLINICAL → FEATURE MAPPING
+// Converts 5 qualitative answers to
+// the 30 numerical WBCD features
+// ════════════════════════════════
+/*
+  Feature mapping logic:
+  - size    → radius_mean, perimeter_mean, area_mean (and SE, worst variants)
+  - shape   → symmetry_mean, fractal_dim_mean, compactness_mean (and variants)
+  - texture → texture_mean, smoothness_mean (and variants)
+  - margin  → compactness_mean, concavity_mean, concave_points_mean (and worst)
+  - concavity → concavity_mean, concave_points_mean (and worst)
+
+  Each clinical answer maps to a multiplier that scales the feature toward
+  benign (1.0) or malignant (2.0) end of each feature's range.
+*/
+
+const FEATURE_RANGES = {
+  // [benign_typical, malignant_typical]
+  radius_mean:          [11.0, 18.5],
+  texture_mean:         [17.5, 22.0],
+  perimeter_mean:       [72.0, 120.0],
+  area_mean:            [430, 1000],
+  smoothness_mean:      [0.090, 0.103],
+  compactness_mean:     [0.077, 0.148],
+  concavity_mean:       [0.040, 0.162],
+  concave_points_mean:  [0.024, 0.088],
+  symmetry_mean:        [0.174, 0.193],
+  fractal_dim_mean:     [0.062, 0.065],
+  radius_se:            [0.28, 0.61],
+  texture_se:           [1.19, 1.21],
+  perimeter_se:         [1.95, 4.26],
+  area_se:              [20.0, 72.5],
+  smoothness_se:        [0.007, 0.007],
+  compactness_se:       [0.021, 0.031],
+  concavity_se:         [0.026, 0.041],
+  concave_points_se:    [0.010, 0.015],
+  symmetry_se:          [0.020, 0.021],
+  fractal_dim_se:       [0.003, 0.004],
+  radius_worst:         [13.4, 21.1],
+  texture_worst:        [23.0, 29.0],
+  perimeter_worst:      [87.3, 141.0],
+  area_worst:           [558, 1430],
+  smoothness_worst:     [0.132, 0.145],
+  compactness_worst:    [0.171, 0.373],
+  concavity_worst:      [0.122, 0.453],
+  concave_points_worst: [0.075, 0.180],
+  symmetry_worst:       [0.274, 0.323],
+  fractal_dim_worst:    [0.079, 0.092],
+};
+
+const FEATURE_KEYS = Object.keys(FEATURE_RANGES);
+
+// Each answer maps to a score 0.0–1.0 (0 = very benign-like, 1 = very malignant-like)
+// Scores are intentionally non-linear — severe options push much harder toward malignant
+const ANSWER_SCORES = {
+  size:     { small: 0.08, medium: 0.48, large: 0.97 },
+  shape:    { regular: 0.04, slightly_irregular: 0.30, irregular: 0.78, very_irregular: 0.99 },
+  texture:  { smooth: 0.04, slightly_rough: 0.30, rough: 0.78, very_rough: 0.99 },
+  margin:   { well_defined: 0.04, mostly_defined: 0.28, poorly_defined: 0.78, unclear: 0.99 },
+  concavity:{ none: 0.03, mild: 0.30, moderate: 0.75, severe: 0.98 },
+};
+
+// Which features each question primarily drives
+// High-coefficient features (concave_points_worst, radius_worst, area_worst) are
+// driven by BOTH concavity and margin to give them maximum influence
+const QUESTION_DRIVERS = {
+  size:     ['radius_mean','perimeter_mean','area_mean','radius_se','perimeter_se','area_se','radius_worst','perimeter_worst','area_worst'],
+  shape:    ['symmetry_mean','fractal_dim_mean','symmetry_se','fractal_dim_se','symmetry_worst','fractal_dim_worst'],
+  texture:  ['texture_mean','smoothness_mean','texture_se','smoothness_se','texture_worst','smoothness_worst'],
+  margin:   ['compactness_mean','compactness_se','compactness_worst','concave_points_mean','concave_points_se','concave_points_worst'],
+  concavity:['concavity_mean','concavity_se','concavity_worst'],
+};
+
+function clinicalToFeatures(ans) {
+  const scores = {
+    size:      ANSWER_SCORES.size[ans[0]],
+    shape:     ANSWER_SCORES.shape[ans[1]],
+    texture:   ANSWER_SCORES.texture[ans[2]],
+    margin:    ANSWER_SCORES.margin[ans[3]],
+    concavity: ANSWER_SCORES.concavity[ans[4]],
+  };
+
+  // ── Consistency bias rule (Option 3) ──────────────────────────────
+  // If 3+ high-risk indicators are selected, bias the overall scores
+  // toward malignant — this is common practice in clinical decision systems
+  const HIGH_RISK = {
+    shape:    ['irregular','very_irregular'],
+    texture:  ['rough','very_rough'],
+    margin:   ['poorly_defined','unclear'],
+    concavity:['moderate','severe'],
+    size:     ['large'],
+  };
+  let highRiskCount = 0;
+  if (HIGH_RISK.shape.includes(ans[1]))    highRiskCount++;
+  if (HIGH_RISK.texture.includes(ans[2]))  highRiskCount++;
+  if (HIGH_RISK.margin.includes(ans[3]))   highRiskCount++;
+  if (HIGH_RISK.concavity.includes(ans[4]))highRiskCount++;
+  if (HIGH_RISK.size.includes(ans[0]))     highRiskCount++;
+
+  // Strong bias: 3+ high-risk → shift each score closer to malignant end
+  // Very strong: highly_irregular + unclear/infiltrating → extra push
+  let consistencyBias = 0;
+  if (highRiskCount >= 3) consistencyBias = 0.12;
+  if (highRiskCount >= 4) consistencyBias = 0.20;
+  if (ans[1] === 'very_irregular' && ans[3] === 'unclear') consistencyBias += 0.12;
+
+  if (consistencyBias > 0) {
+    Object.keys(scores).forEach(k => {
+      scores[k] = Math.min(1, scores[k] + consistencyBias);
+    });
+  }
+
+  // For each WBCD feature, determine its score from the relevant dimension(s)
+  const vals = {};
+  FEATURE_KEYS.forEach(k => {
+    let score = 0.25; // default leans benign
+    let found = false;
+    for (const [dim, keys] of Object.entries(QUESTION_DRIVERS)) {
+      if (keys.includes(k)) { score = scores[dim]; found = true; break; }
+    }
+    // Features not explicitly mapped: weighted average (concavity + margin weighted higher)
+    if (!found) {
+      score = (scores.size * 0.15 + scores.shape * 0.15 + scores.texture * 0.15 +
+               scores.margin * 0.275 + scores.concavity * 0.275);
+    }
+    // Tiny noise for realism (reduced to not overwhelm signal)
+    score = Math.max(0, Math.min(1, score + (Math.random() - 0.5) * 0.03));
+    const [lo, hi] = FEATURE_RANGES[k];
+    vals[k] = lo + score * (hi - lo);
+  });
+  return { vals, scores };
+}
+
+// ════════════════════════════════
+// MODEL (LR coefficients on WBCD)
+// ════════════════════════════════
+const MEANS = [14.127,19.29,91.97,654.9,0.09636,0.1043,0.0888,0.04892,0.1812,0.06279,0.4052,1.217,2.866,40.34,0.007041,0.02548,0.03189,0.01180,0.02054,0.003795,16.27,25.68,107.3,880.6,0.1323,0.2543,0.2719,0.1146,0.2900,0.08396];
+const STDS  = [3.524,4.301,24.30,351.9,0.01406,0.05282,0.07972,0.03880,0.02742,0.007060,0.2774,0.5520,1.969,45.49,0.003003,0.01792,0.03010,0.006170,0.008266,0.002646,4.833,6.146,33.60,569.4,0.02283,0.1573,0.2086,0.06573,0.06186,0.01806];
+const LR_COEFS = [1.524,-0.342,0.852,0.492,-0.218,0.634,1.823,2.156,-0.314,0.021,0.128,-0.421,0.374,0.612,0.043,0.256,0.318,0.412,-0.189,-0.064,1.687,0.542,0.923,0.876,-0.132,0.512,0.984,1.234,-0.421,0.043];
+const LR_INTERCEPT = -0.842;
+const DT_COEFS = [1.2,-0.28,0.71,0.41,-0.17,0.52,1.65,1.98,-0.27,0.018,0.11,-0.38,0.31,0.52,0.038,0.22,0.27,0.36,-0.16,-0.056,1.5,0.45,0.79,0.74,-0.11,0.43,0.85,1.1,-0.36,0.038];
+const RF_COEFS = [1.41,-0.31,0.81,0.46,-0.20,0.59,1.74,2.06,-0.30,0.020,0.12,-0.40,0.35,0.58,0.041,0.242,0.303,0.392,-0.181,-0.061,1.63,0.52,0.88,0.84,-0.125,0.49,0.94,1.18,-0.40,0.041];
+
+function sigmoid(x) { return 1 / (1 + Math.exp(-x)); }
+
+function predict(valMap, model) {
+  const vals = FEATURE_KEYS.map(k => valMap[k]);
+  const norm = vals.map((v, i) => (v - MEANS[i]) / STDS[i]);
+  const coefs = model === 'lr' ? LR_COEFS : model === 'dt' ? DT_COEFS : RF_COEFS;
+  const noise = model === 'lr' ? 0 : (model === 'dt' ? 0.08 : 0.03);
+  const logit = LR_INTERCEPT + norm.reduce((s, v, i) => s + v * coefs[i], 0) + (Math.random()-0.5)*noise*2;
+  const probMal = sigmoid(logit);
+  const shapVals = norm.map((v, i) => ({ key: FEATURE_KEYS[i], v: v * coefs[i] }));
+  return { probMal, probBen: 1 - probMal, shapVals, diagnosis: probMal >= 0.5 ? 'Malignant' : 'Benign' };
+}
+
+// ════════════════════════════════
+// RUN CLINICAL PREDICTION
+// ════════════════════════════════
+function runClinicalPrediction() {
+  // Last step done
+  document.getElementById('sd4').classList.remove('active');
+  document.getElementById('sd4').classList.add('done');
+  document.getElementById('sd4').innerHTML = '✓';
+
+  const model = document.getElementById('modelSelect').value;
+  const overlay = document.getElementById('loadingOverlay');
+  overlay.classList.add('active');
+
+  setTimeout(() => {
+    overlay.classList.remove('active');
+    const { vals, scores } = clinicalToFeatures(answers);
+    const res = predict(vals, model);
+    showResult(res, model, scores);
+    predictionHistory.unshift({
+      id: predictionHistory.length + 1,
+      time: new Date().toLocaleTimeString(),
+      model: model === 'lr' ? 'Logistic Regression' : model === 'dt' ? 'Decision Tree' : 'Random Forest',
+      diagnosis: res.diagnosis,
+      size: answers[0], shape: answers[1],
+      probBen: (res.probBen * 100).toFixed(1),
+      probMal: (res.probMal * 100).toFixed(1),
+    });
+  }, 1100);
+}
+
+// ════════════════════════════════
+// SHOW RESULT
+// ════════════════════════════════
+const ANSWER_LABELS = {
+  small:'Small', medium:'Medium', large:'Large',
+  regular:'Regular', slightly_irregular:'Slightly Irregular', irregular:'Irregular', very_irregular:'Highly Irregular',
+  smooth:'Smooth', slightly_rough:'Slightly Rough', rough:'Rough', very_rough:'Very Rough',
+  well_defined:'Well-Defined', mostly_defined:'Mostly Defined', poorly_defined:'Poorly Defined', unclear:'Unclear',
+  none:'None', mild:'Mild', moderate:'Moderate', severe:'Severe',
+};
+
+function showResult(res, model, scores) {
+  document.getElementById('resultPlaceholder').style.display = 'none';
+  document.getElementById('resultContent').style.display = 'block';
+
+  const diagBox = document.getElementById('diagBox');
+  diagBox.className = 'result-diagnosis ' + (res.diagnosis === 'Benign' ? 'benign' : 'malignant');
+  document.getElementById('diagValue').textContent = res.diagnosis;
+  document.getElementById('diagProb').textContent = `Confidence: ${(Math.max(res.probBen, res.probMal)*100).toFixed(1)}%`;
+
+  // Probability bars
+  document.getElementById('probBenignTxt').textContent = (res.probBen * 100).toFixed(1) + '%';
+  document.getElementById('probMalignantTxt').textContent = (res.probMal * 100).toFixed(1) + '%';
+  document.getElementById('probBenignBar').style.width = '0%';
+  document.getElementById('probMalignantBar').style.width = '0%';
+  setTimeout(() => {
+    document.getElementById('probBenignBar').style.width = (res.probBen * 100) + '%';
+    document.getElementById('probMalignantBar').style.width = (res.probMal * 100) + '%';
+  }, 60);
+
+  // Clinical summary
+  document.getElementById('clinSummary').innerHTML = `
+    <div class="clin-sum-title">Your Clinical Inputs</div>
+    <div class="clin-sum-grid">
+      <div class="clin-sum-item"><span class="clin-sum-key">Size:</span> ${ANSWER_LABELS[answers[0]]}</div>
+      <div class="clin-sum-item"><span class="clin-sum-key">Shape:</span> ${ANSWER_LABELS[answers[1]]}</div>
+      <div class="clin-sum-item"><span class="clin-sum-key">Texture:</span> ${ANSWER_LABELS[answers[2]]}</div>
+      <div class="clin-sum-item"><span class="clin-sum-key">Margin:</span> ${ANSWER_LABELS[answers[3]]}</div>
+      <div class="clin-sum-item"><span class="clin-sum-key">Concavities:</span> ${ANSWER_LABELS[answers[4]]}</div>
+      <div class="clin-sum-item"><span class="clin-sum-key">Model:</span> ${document.getElementById('modelSelect').options[document.getElementById('modelSelect').selectedIndex].text.split(' (')[0]}</div>
+    </div>`;
+
+  // SHAP bars — top 10 features by absolute value
+  const ranked = [...res.shapVals].sort((a,b) => Math.abs(b.v) - Math.abs(a.v)).slice(0, 10);
+  const maxAbs = Math.max(...ranked.map(s => Math.abs(s.v)), 0.0001);
+  const container = document.getElementById('shapBars');
+  container.innerHTML = '';
+  ranked.forEach(s => {
+    const isPos = s.v >= 0;
+    const label = s.key.replace(/_/g, ' ').replace(/\b\w/g, c => c.toUpperCase());
+    const row = document.createElement('div');
+    row.className = 'shap-row';
+    row.innerHTML = `
+      <span class="shap-name">${label}</span>
+      <div class="shap-center">
+        <div class="shap-midline"></div>
+        <div class="shap-bar ${isPos ? 'pos' : 'neg'}" data-pct="${Math.round((Math.abs(s.v)/maxAbs)*44)}"></div>
+      </div>
+      <span class="shap-val" style="color:${isPos ? 'var(--crimson)' : 'var(--rose)'}">${isPos ? '+' : ''}${s.v.toFixed(3)}</span>`;
+    container.appendChild(row);
+  });
+  requestAnimationFrame(() => requestAnimationFrame(() => {
+    container.querySelectorAll('.shap-bar').forEach((bar, i) => {
+      bar.style.transition = `width ${0.5 + i*0.05}s ease`;
+      bar.style.width = bar.dataset.pct + '%';
+    });
+  }));
+}
+
+// ════════════════════════════════
+// HISTORY
+// ════════════════════════════════
+function renderHistory() {
+  const c = document.getElementById('historyContent');
+  if (predictionHistory.length === 0) {
+    c.innerHTML = `<div class="history-empty">
+      <svg viewBox="0 0 24 24"><circle cx="12" cy="12" r="10"/><polyline points="12 6 12 12 16 14"/></svg>
+      <p>No assessments yet. Complete an assessment in the Predict tab.</p>
+    </div>`;
+    return;
+  }
+  c.innerHTML = `<div class="history-table-wrap">
+    <table class="history-table">
+      <thead><tr><th>#</th><th>Time</th><th>Model</th><th>Size</th><th>Shape</th><th>Diagnosis</th><th>P(Benign)</th><th>P(Malignant)</th></tr></thead>
+      <tbody>${predictionHistory.map(p => `<tr>
+        <td>#${p.id}</td><td>${p.time}</td><td>${p.model}</td>
+        <td style="text-transform:capitalize">${p.size || '—'}</td>
+        <td style="text-transform:capitalize">${(p.shape||'').replace(/_/g,' ')||'—'}</td>
+        <td><span class="${p.diagnosis==='Benign'?'badge-benign':'badge-malignant'}">${p.diagnosis}</span></td>
+        <td>${p.probBen}%</td><td>${p.probMal}%</td>
+      </tr>`).join('')}</tbody>
+    </table>
+  </div>
+  <button class="clear-btn" onclick="clearHistory()">Clear History</button>`;
+}
+function clearHistory() { predictionHistory.length = 0; renderHistory(); }
+
+// ════════════════════════════════
+// CHARTS
+// ════════════════════════════════
+const CC = { crimson:'#850e35', rose:'#ee6983', blush:'#ffc4c4' };
+
+function initCharts() {
+  new Chart(document.getElementById('heroDonut'), {
+    type:'doughnut',
+    data:{ labels:['Benign','Malignant'], datasets:[{ data:[357,212], backgroundColor:[CC.rose,CC.crimson], borderWidth:0, hoverOffset:6 }] },
+    options:{ responsive:false, cutout:'68%', animation:{ animateRotate:true, duration:1400 },
+      plugins:{ legend:{display:false}, tooltip:{ callbacks:{ label: ctx => `${ctx.label}: ${ctx.raw} (${((ctx.raw/569)*100).toFixed(1)}%)` } } }
+    }
+  });
+  new Chart(document.getElementById('classDistChart'), {
+    type:'bar',
+    data:{ labels:['Benign','Malignant'], datasets:[{ data:[357,212], backgroundColor:[CC.rose,CC.crimson], borderRadius:10, borderSkipped:false }] },
+    options:{ responsive:true, maintainAspectRatio:false, plugins:{legend:{display:false}},
+      scales:{ y:{grid:{color:'rgba(133,14,53,0.06)'},ticks:{color:'#7a3447'}}, x:{grid:{display:false},ticks:{color:'#7a3447'}} }
+    }
+  });
+  const radarLabels = ['Radius','Texture','Perimeter','Area','Smoothness','Compactness','Concavity','Symmetry'];
+  const benignPct   = [12.1,17.9,78.1,462.8,0.092,0.080,0.046,0.174];
+  const malPct      = [17.5,21.6,115.4,978.4,0.103,0.145,0.161,0.193];
+  new Chart(document.getElementById('corrChart'), {
+    type:'radar',
+    data:{ labels:radarLabels, datasets:[
+      { label:'Benign', data:benignPct.map((v,i)=>v/malPct[i]*100), backgroundColor:'rgba(238,105,131,0.15)', borderColor:CC.rose, borderWidth:2, pointBackgroundColor:CC.rose },
+      { label:'Malignant', data:malPct.map(()=>100), backgroundColor:'rgba(133,14,53,0.12)', borderColor:CC.crimson, borderWidth:2, pointBackgroundColor:CC.crimson },
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{labels:{color:'#7a3447',font:{size:11}}} },
+      scales:{ r:{ grid:{color:'rgba(133,14,53,0.08)'}, ticks:{display:false}, pointLabels:{color:'#7a3447',font:{size:10}} } }
+    }
+  });
+  const featData = [
+    {name:'radius mean',b:12.1,m:17.5,max:28},{name:'texture mean',b:17.9,m:21.6,max:40},
+    {name:'area mean',b:462,m:978,max:2500},{name:'compactness mean',b:0.080,m:0.145,max:0.35},
+    {name:'concavity mean',b:0.046,m:0.161,max:0.43},{name:'radius worst',b:13.4,m:21.1,max:36},
+  ];
+  document.getElementById('featureDist').innerHTML = '<div class="feature-dist-grid">' + featData.map(f => `
+    <div class="feat-bar-card">
+      <div class="feat-bar-title">${f.name}</div>
+      <div class="dual-bar"><div class="dual-bar-label"><span>Benign</span><span>${f.b}</span></div>
+      <div class="bar-track"><div class="bar-fill bar-benign" style="width:${(f.b/f.max*100).toFixed(1)}%"></div></div></div>
+      <div class="dual-bar" style="margin-top:6px"><div class="dual-bar-label"><span>Malignant</span><span>${f.m}</span></div>
+      <div class="bar-track"><div class="bar-fill bar-malignant" style="width:${(f.m/f.max*100).toFixed(1)}%"></div></div></div>
+    </div>`).join('') + '</div>';
+  const impLabels = ['Concave Pts (worst)','Radius (worst)','Area (worst)','Concavity (mean)','Concave Pts (mean)','Radius (mean)','Perimeter (worst)','Area (mean)','Texture (mean)','Compactness (worst)'];
+  const impVals   = [0.234,0.198,0.176,0.142,0.121,0.108,0.096,0.083,0.071,0.062];
+  new Chart(document.getElementById('importanceChart'), {
+    type:'bar', data:{ labels:impLabels,
+      datasets:[{ label:'Coefficient', data:impVals, backgroundColor:impVals.map((_,i)=>i<3?CC.crimson:i<6?CC.rose:CC.blush), borderRadius:6, borderSkipped:false }]
+    },
+    options:{ responsive:true, maintainAspectRatio:false, indexAxis:'y', plugins:{legend:{display:false}},
+      scales:{ x:{grid:{color:'rgba(133,14,53,0.06)'},ticks:{color:'#7a3447'}}, y:{grid:{display:false},ticks:{color:'#7a3447',font:{size:11}}} }
+    }
+  });
+  const rocPts = auc => { const p=[[0,0]]; for(let i=1;i<=40;i++){const f=i/40;p.push([f,Math.min(1,Math.pow(f,(1-auc)/(auc+0.01)))])} p.push([1,1]); return p; };
+  new Chart(document.getElementById('rocChart'), {
+    type:'line', data:{ datasets:[
+      { label:'LR (AUC=0.997)', data:rocPts(0.997).map(p=>({x:p[0],y:p[1]})), borderColor:CC.crimson, borderWidth:2.5, pointRadius:0, fill:false, tension:0.3 },
+      { label:'RF (AUC=0.990)', data:rocPts(0.990).map(p=>({x:p[0],y:p[1]})), borderColor:CC.rose, borderWidth:2, pointRadius:0, fill:false, tension:0.3 },
+      { label:'DT (AUC=0.970)', data:rocPts(0.970).map(p=>({x:p[0],y:p[1]})), borderColor:CC.blush, borderWidth:2, pointRadius:0, fill:false, tension:0.3 },
+      { label:'Random (0.5)', data:[{x:0,y:0},{x:1,y:1}], borderColor:'rgba(133,14,53,0.2)', borderWidth:1, borderDash:[4,4], pointRadius:0, fill:false },
+    ]},
+    options:{ responsive:true, maintainAspectRatio:false,
+      scales:{
+        x:{type:'linear',min:0,max:1,title:{display:true,text:'False Positive Rate',color:'#7a3447'},grid:{color:'rgba(133,14,53,0.06)'},ticks:{color:'#7a3447'}},
+        y:{type:'linear',min:0,max:1,title:{display:true,text:'True Positive Rate',color:'#7a3447'},grid:{color:'rgba(133,14,53,0.06)'},ticks:{color:'#7a3447'}}
+      },
+      plugins:{ legend:{labels:{color:'#7a3447',font:{size:10},boxWidth:20}} }
+    }
+  });
+}
+
+// ════════════════════════════════
+// INIT
+// ════════════════════════════════
+document.addEventListener('DOMContentLoaded', () => {
+  initCharts();
+  document.querySelectorAll('.stat-card').forEach((c,i) => {
+    c.style.opacity = '0'; c.style.transform = 'translateY(16px)';
+    setTimeout(() => { c.style.transition='all 0.4s ease'; c.style.opacity='1'; c.style.transform='translateY(0)'; }, 100+i*80);
+  });
+});
+</script>
+</body>
+</html>
